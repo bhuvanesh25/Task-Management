@@ -1,30 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import api from '../Api';
 import ModalPopUp from './modalpopup'
+import { errorMsg, successMsg, deleteMsg } from '../Utils/notifications';
 
 const TaskList = (type, task) => {
     const [currentTask, setCurrentTask] = useState({});
     const [tasks, setTasks] = useState([]);
-    const [show, setShow] = useState(false);
+    const [showTaskForm, setShowTaskForm] = useState(false);
+    const [message, setMessage] = useState({});
 
     useEffect(() => {
-        getAllTasks();
+        getAllTasks('');
     }, []);
 
-    const handleClose = () => setShow(false);
+    const handleClose = () => setShowTaskForm(false);
 
     const addTask = () => {
         setCurrentTask({});
-        setShow(true);
+        setShowTaskForm(true);
     }
 
     const editTask = (task) => {
         setCurrentTask(task);
-        setShow(true);
+        setShowTaskForm(true);
     }
 
-    const getAllTasks = async () => {
-        setShow(false);
+    const clearAlert = ()=>{
+        setTimeout(() => {
+            setMessage({});
+        }, 5000);
+    }
+
+    const getAllTasks = async (actionMsg) => {
+        setMessage(actionMsg);
+        clearAlert();
+        setShowTaskForm(false);
         const response = await api.get('/task');
         setTasks(response.data);
     }
@@ -34,21 +44,27 @@ const TaskList = (type, task) => {
         const result = window.confirm("Are you sure, you want to delete this task?")
         if (result) {
             const response = await api.delete('/task/' + id);
-            getAllTasks();
+            getAllTasks(deleteMsg);
         }
     }
 
     return (
         <>
+
             <div className="container mx-auto max-w-[1366px] p-4">
+                {
+                    message && <div className={message.css}  role="alert">
+                        <span class="font-medium">{message.msg}</span>
+                    </div>
+                }
                 <div className="grid grid-cols-2 gap-4 items-center">
 
                     <div>
-                        <p className="text-left text-2xl font-bold mb-4"><h1 className="">Task Management</h1></p>
+                        <h1 className="text-left text-2xl font-bold mb-4">Task Management</h1>
                     </div>
 
 
-                    <div class="text-right">
+                    <div className="text-right">
                         <button className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600" onClick={() => editTask(task)}>
                             Add
                         </button>
@@ -67,7 +83,7 @@ const TaskList = (type, task) => {
                         </thead>
                         <tbody>
                             {tasks.map((task, index) => (
-                                <tr key={task.id} classNames="bg-white dark:bg-gray-800">
+                                <tr key={task.id} className="bg-white dark:bg-gray-800">
                                     <td className="py-2 px-4 border-b border-gray-200 text-center">
                                         {++index}
                                     </td>
@@ -100,8 +116,8 @@ const TaskList = (type, task) => {
             </div>
 
 
-            {show && <ModalPopUp open={true} close={handleClose} task={currentTask} refreshList={getAllTasks}/>
-                 
+            {showTaskForm && <ModalPopUp open={true} close={handleClose} task={currentTask} refreshList={getAllTasks} />
+
             }
 
         </>
